@@ -9,6 +9,8 @@ import math
 cap = cv2.VideoCapture(0)
 img = None
 landmarks_global = []
+prev_index_y = None
+
 
 
 def handle_result(result, output_image, timestamp_ms):
@@ -33,23 +35,31 @@ def like_action(thumb_tip, index_finger_tip):
     if distance <= 0.05:
         print("Liked the tiktok")
 
-def swipe_action():
-    print("swiped to next video")
-
-def save_action():
-    print("saved Video")
-
-# This loop continuously reads frames from the camera feed, 
-# writes them to the output video file, and displays them in a window.
-while True:
+#swiping up
+def swipe_up_action(index_finger_tip):
+    global prev_index_y
     
-    success, img = cap.read()
+    if index_finger_tip.y - prev_index_y < -0.05:
+        print("swiped to next video")
 
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    converted = mp.Image(mp.ImageFormat.SRGB,img_rgb)
-    result = landmarker.detect_async(converted, int(time.time() * 1000))
-    if landmarks_global:
-        for hand in landmarks_global:
+#swiping down
+def swipe_down_action(index_finger_tip):
+    global prev_index_y
+    
+    if index_finger_tip.y - prev_index_y > 0.05:
+        print("swiped to previous video")
+
+#saving video
+def save_action(thumb_tip, middle_finger_tip):
+    distance = math.sqrt((middle_finger_tip.x-thumb_tip.x)** 2   + (middle_finger_tip.y - thumb_tip.y)**2)
+    if distance <= 0.05:
+        print("saved Video")
+
+
+def process_landmark():
+    global prev_index_y
+    for hand in landmarks_global:
+            
             wrist = hand[0]
 
             #Thumb Finger
@@ -63,6 +73,11 @@ while True:
             index_finger_pip = hand[6]
             index_finger_dip = hand[7]
             index_finger_tip = hand[8]
+            if prev_index_y is not None:
+                swipe_up_action(index_finger_tip)
+                swipe_down_action(index_finger_tip)
+            prev_index_y = index_finger_tip.y
+
 
             #Middle Finger
             middle_finger_mcp = hand[9]
@@ -89,6 +104,19 @@ while True:
                 
                 # print(landmark.x, landmark.y)
             like_action(thumb_tip, index_finger_tip)
+            save_action(thumb_tip, middle_finger_tip)
+
+# This loop continuously reads frames from the camera feed, 
+# writes them to the output video file, and displays them in a window.
+while True:
+    
+    success, img = cap.read()
+
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    converted = mp.Image(mp.ImageFormat.SRGB,img_rgb)
+    result = landmarker.detect_async(converted, int(time.time() * 1000))
+    if landmarks_global:
+        process_landmark()
     
     cv2.imshow("Image",img)
     cv2.waitKey(1)
