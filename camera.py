@@ -3,6 +3,11 @@ import cv2
 import mediapipe as mp
 import time
 import math
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+import undetected_chromedriver as uc
+
 
 
 
@@ -10,6 +15,11 @@ cap = cv2.VideoCapture(0)
 img = None
 landmarks_global = []
 prev_index_y = None
+driver = uc.Chrome(version_main=148)
+driver.get("https://www.tiktok.com/")
+assert "TikTok" in driver.title
+elem = driver.find_element(By.TAG_NAME, "body")
+
 
 
 
@@ -33,6 +43,7 @@ landmarker = mp.tasks.vision.HandLandmarker.create_from_options(options)
 def like_action(thumb_tip, index_finger_tip):
     distance = math.sqrt((index_finger_tip.x-thumb_tip.x)** 2   + (index_finger_tip.y - thumb_tip.y)**2)
     if distance <= 0.05:
+        elem.send_keys("L")
         print("Liked the tiktok")
 
 #swiping up
@@ -40,6 +51,7 @@ def swipe_up_action(index_finger_tip):
     global prev_index_y
     
     if index_finger_tip.y - prev_index_y < -0.05:
+        elem.send_keys(Keys.ARROW_DOWN)
         print("swiped to next video")
 
 #swiping down
@@ -47,6 +59,7 @@ def swipe_down_action(index_finger_tip):
     global prev_index_y
     
     if index_finger_tip.y - prev_index_y > 0.05:
+        elem.send_keys(Keys.ARROW_UP)
         print("swiped to previous video")
 
 #saving video
