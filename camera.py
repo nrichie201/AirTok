@@ -15,6 +15,10 @@ cap = cv2.VideoCapture(0)
 img = None
 landmarks_global = []
 prev_index_y = None
+swipe_up_complete = False
+swipe_down_complete = False
+
+#Uses chrome to run the handgesture integration
 driver = uc.Chrome(version_main=148)
 driver.get("https://www.tiktok.com/")
 assert "TikTok" in driver.title
@@ -47,20 +51,39 @@ def like_action(thumb_tip, index_finger_tip):
         print("Liked the tiktok")
 
 #swiping up
-def swipe_up_action(index_finger_tip):
-    global prev_index_y
-    
-    if index_finger_tip.y - prev_index_y < -0.05:
+def swipe_up_action(pinky_tip, wrist, ring_finger_tip, middle_finger_tip, thumb_cmc):
+    distPinkyToWrist = math.sqrt((pinky_tip.x-wrist.x)** 2   + (pinky_tip.y - wrist.y)**2)
+    distRingToWrist = math.sqrt((ring_finger_tip.x-wrist.x)** 2   + (ring_finger_tip.y - wrist.y)**2)
+    distMiddleToThumb1 = math.sqrt((middle_finger_tip.x-thumb_cmc.x)** 2   + (middle_finger_tip.y - thumb_cmc.y)**2)
+    global swipe_up_complete
+
+    gesture_active = distPinkyToWrist <= 0.3 and distRingToWrist <= 0.3 and distMiddleToThumb1 <= 0.1
+
+    if gesture_active and not swipe_up_complete:
         elem.send_keys(Keys.ARROW_DOWN)
+        swipe_up_complete = True
         print("swiped to next video")
+    elif not gesture_active:
+        # reset
+        swipe_up_complete = False
 
 #swiping down
-def swipe_down_action(index_finger_tip):
-    global prev_index_y
-    
-    if index_finger_tip.y - prev_index_y > 0.05:
+def swipe_down_action(pinky_tip, wrist, ring_finger_tip, middle_finger_tip, thumb_cmc, index_finger_tip):
+    distPinkyToWrist = math.sqrt((pinky_tip.x-wrist.x)** 2   + (pinky_tip.y - wrist.y)**2)
+    distRingToWrist = math.sqrt((ring_finger_tip.x-wrist.x)** 2   + (ring_finger_tip.y - wrist.y)**2)
+    distMiddleToThumb1 = math.sqrt((middle_finger_tip.x-thumb_cmc.x)** 2   + (middle_finger_tip.y - thumb_cmc.y)**2)
+    distIndexToThumb1 = math.sqrt((index_finger_tip.x-thumb_cmc.x)** 2   + (index_finger_tip.y - thumb_cmc.y)**2)
+    global swipe_down_complete
+
+    gesture_active = distPinkyToWrist <= 0.3 and distRingToWrist <= 0.3 and distMiddleToThumb1 <= 0.1 and distIndexToThumb1 <= 0.1
+
+    if gesture_active and not swipe_down_complete:
         elem.send_keys(Keys.ARROW_UP)
-        print("swiped to previous video")
+        swipe_down_complete = True
+        print("swiping back to previous video")
+    elif not gesture_active:
+        # reset
+        swipe_down_complete = False
 
 #saving video
 def save_action(thumb_tip, middle_finger_tip):
@@ -86,10 +109,7 @@ def process_landmark():
             index_finger_pip = hand[6]
             index_finger_dip = hand[7]
             index_finger_tip = hand[8]
-            if prev_index_y is not None:
-                swipe_up_action(index_finger_tip)
-                swipe_down_action(index_finger_tip)
-            prev_index_y = index_finger_tip.y
+            
 
 
             #Middle Finger
@@ -109,6 +129,12 @@ def process_landmark():
             pinky_pip = hand[18]
             pinky_dip = hand[19]
             pinky_tip = hand[20]
+
+            
+            if prev_index_y is not None:
+                swipe_up_action(pinky_tip, wrist, ring_finger_tip, middle_finger_tip, thumb_cmc)
+                swipe_down_action(pinky_tip, wrist, ring_finger_tip, middle_finger_tip, thumb_cmc, index_finger_tip)
+            prev_index_y = index_finger_tip.y
             for landmark in hand:
                 h, w, c = img.shape
                 cv2.circle(img=img, center=(int(w*landmark.x), int(h*landmark.y)) , radius=1, color=(0,255,0), thickness=3) 
@@ -122,7 +148,7 @@ def process_landmark():
 # This loop continuously reads frames from the camera feed, 
 # writes them to the output video file, and displays them in a window.
 while True:
-    
+
     success, img = cap.read()
 
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
