@@ -7,16 +7,19 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 import undetected_chromedriver as uc
-
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 
 cap = cv2.VideoCapture(0)
 img = None
 landmarks_global = []
-prev_index_y = None
+
 swipe_up_complete = False
 swipe_down_complete = False
+like_complete = False
+save_complete = False
 
 #Uses chrome to run the handgesture integration
 driver = uc.Chrome(version_main=148)
@@ -44,56 +47,48 @@ options = mp.tasks.vision.HandLandmarkerOptions(
 landmarker = mp.tasks.vision.HandLandmarker.create_from_options(options)
     
 # Likes the tiktok video
-def like_action(thumb_tip, index_finger_tip):
-    distance = math.sqrt((index_finger_tip.x-thumb_tip.x)** 2   + (index_finger_tip.y - thumb_tip.y)**2)
-    if distance <= 0.05:
-        elem.send_keys("L")
-        print("Liked the tiktok")
+def like_action():
+    global like_complete
+    elem.send_keys("L")
+    like_complete = True
+    print("Liked the tiktok")
 
 #swiping up
-def swipe_up_action(pinky_tip, wrist, ring_finger_tip, middle_finger_tip, thumb_cmc):
-    distPinkyToWrist = math.sqrt((pinky_tip.x-wrist.x)** 2   + (pinky_tip.y - wrist.y)**2)
-    distRingToWrist = math.sqrt((ring_finger_tip.x-wrist.x)** 2   + (ring_finger_tip.y - wrist.y)**2)
-    distMiddleToThumb1 = math.sqrt((middle_finger_tip.x-thumb_cmc.x)** 2   + (middle_finger_tip.y - thumb_cmc.y)**2)
+def swipe_up_action():
     global swipe_up_complete
-
-    gesture_active = distPinkyToWrist <= 0.3 and distRingToWrist <= 0.3 and distMiddleToThumb1 <= 0.1
-
-    if gesture_active and not swipe_up_complete:
-        elem.send_keys(Keys.ARROW_DOWN)
-        swipe_up_complete = True
-        print("swiped to next video")
-    elif not gesture_active:
-        # reset
-        swipe_up_complete = False
+    elem.send_keys(Keys.ARROW_DOWN)
+    swipe_up_complete = True
+    print("swiped to next video")
 
 #swiping down
-def swipe_down_action(pinky_tip, wrist, ring_finger_tip, middle_finger_tip, thumb_cmc, index_finger_tip):
-    distPinkyToWrist = math.sqrt((pinky_tip.x-wrist.x)** 2   + (pinky_tip.y - wrist.y)**2)
-    distRingToWrist = math.sqrt((ring_finger_tip.x-wrist.x)** 2   + (ring_finger_tip.y - wrist.y)**2)
-    distMiddleToThumb1 = math.sqrt((middle_finger_tip.x-thumb_cmc.x)** 2   + (middle_finger_tip.y - thumb_cmc.y)**2)
-    distIndexToThumb1 = math.sqrt((index_finger_tip.x-thumb_cmc.x)** 2   + (index_finger_tip.y - thumb_cmc.y)**2)
+def swipe_down_action():
+    
     global swipe_down_complete
+    elem.send_keys(Keys.ARROW_UP)
+    swipe_down_complete = True
+    print("swiping back to previous video")
+    
 
-    gesture_active = distPinkyToWrist <= 0.3 and distRingToWrist <= 0.3 and distMiddleToThumb1 <= 0.1 and distIndexToThumb1 <= 0.1
-
-    if gesture_active and not swipe_down_complete:
-        elem.send_keys(Keys.ARROW_UP)
-        swipe_down_complete = True
-        print("swiping back to previous video")
-    elif not gesture_active:
-        # reset
-        swipe_down_complete = False
-
-#saving video
-def save_action(thumb_tip, middle_finger_tip):
-    distance = math.sqrt((middle_finger_tip.x-thumb_tip.x)** 2   + (middle_finger_tip.y - thumb_tip.y)**2)
-    if distance <= 0.05:
-        print("saved Video")
+# #saving video
+# def save_action():
+#     global save_complete
+#     try:
+#         element = WebDriverWait(driver, 10).until(
+#             EC.element_to_be_clickable((By.XPATH, "//*[contains(@aria-label, 'Favorit')]"))
+#             )
+#         element.click()
+#         save_complete = True
+#         print("save action fired!")
+#     except:
+#         print("save button not found")
 
 
 def process_landmark():
-    global prev_index_y
+    global swipe_down_complete
+    global swipe_up_complete
+    global like_complete
+    global save_complete
+    frame_count = 0
     for hand in landmarks_global:
             
             wrist = hand[0]
@@ -130,11 +125,40 @@ def process_landmark():
             pinky_dip = hand[19]
             pinky_tip = hand[20]
 
+            #distance calculations
+            distPinkyToWrist = math.sqrt((pinky_tip.x-wrist.x)** 2   + (pinky_tip.y - wrist.y)**2)
+            distRingToWrist = math.sqrt((ring_finger_tip.x-wrist.x)** 2   + (ring_finger_tip.y - wrist.y)**2)
+            distIndexToWrist = math.sqrt((index_finger_tip.x-wrist.x)** 2   + (index_finger_tip.y - wrist.y)**2)
+            distMidToWrist = math.sqrt((middle_finger_tip.x-wrist.x)** 2   + (middle_finger_tip.y - wrist.y)**2)
+            distMiddleToThumb1 = math.sqrt((middle_finger_tip.x-thumb_cmc.x)** 2   + (middle_finger_tip.y - thumb_cmc.y)**2)
+            distIndexToThumb1 = math.sqrt((index_finger_tip.x-thumb_cmc.x)** 2   + (index_finger_tip.y - thumb_cmc.y)**2)
+
+            SA_active = math.sqrt((middle_finger_tip.x-thumb_tip.x)** 2   + (middle_finger_tip.y - thumb_tip.y)**2)
+            LA_active = math.sqrt((index_finger_tip.x-thumb_tip.x)** 2   + (index_finger_tip.y - thumb_tip.y)**2)
+
+            SU_gesture_active = distPinkyToWrist <= 0.3 and distRingToWrist <= 0.3 and distMiddleToThumb1 <= 0.1
+            SD_gesture_active = distPinkyToWrist <= 0.4 and distRingToWrist <= 0.4 and distMidToWrist >= 0.5 and distIndexToWrist >= 0.5
+            frame_count += 1
+            if frame_count % 30 == 0:
+                print("sd_active:", SD_gesture_active, "su_active:", SU_gesture_active)
+            if SD_gesture_active and not swipe_down_complete:
+                swipe_down_action()
+            elif SU_gesture_active and not swipe_up_complete:
+                swipe_up_action()
+            elif LA_active <= 0.05 and not like_complete:
+                like_action()
+            # elif SA_active <= 0.05 and not save_complete:
+            #     save_action()
+            elif not SD_gesture_active and not SU_gesture_active and not (LA_active <= 0.05):
+                swipe_down_complete = False
+                swipe_up_complete = False
+                like_complete = False
+                save_complete = False
+            else:
+                pass
+
+
             
-            if prev_index_y is not None:
-                swipe_up_action(pinky_tip, wrist, ring_finger_tip, middle_finger_tip, thumb_cmc)
-                swipe_down_action(pinky_tip, wrist, ring_finger_tip, middle_finger_tip, thumb_cmc, index_finger_tip)
-            prev_index_y = index_finger_tip.y
             for landmark in hand:
                 h, w, c = img.shape
                 cv2.circle(img=img, center=(int(w*landmark.x), int(h*landmark.y)) , radius=1, color=(0,255,0), thickness=3) 
@@ -142,8 +166,7 @@ def process_landmark():
                 # print(img is None)
                 
                 # print(landmark.x, landmark.y)
-            like_action(thumb_tip, index_finger_tip)
-            save_action(thumb_tip, middle_finger_tip)
+            
 
 # This loop continuously reads frames from the camera feed, 
 # writes them to the output video file, and displays them in a window.
