@@ -25,3 +25,4 @@ python camera.py
 - Save gesture implementation
 - JavaScript rewrite
 - Mobile app support
+- Fix Swipe up repeating when held
