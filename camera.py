@@ -82,7 +82,7 @@ def swipe_down_action():
 #     except:
 #         print("save button not found")
 
-
+#Main function, processes the landmarks and calls on each action function each frame.
 def process_landmark():
     global swipe_down_complete
     global swipe_up_complete
@@ -125,7 +125,7 @@ def process_landmark():
             pinky_dip = hand[19]
             pinky_tip = hand[20]
 
-            #distance calculations
+            #Distance Calculations
             distPinkyToWrist = math.sqrt((pinky_tip.x-wrist.x)** 2   + (pinky_tip.y - wrist.y)**2)
             distRingToWrist = math.sqrt((ring_finger_tip.x-wrist.x)** 2   + (ring_finger_tip.y - wrist.y)**2)
             distIndexToWrist = math.sqrt((index_finger_tip.x-wrist.x)** 2   + (index_finger_tip.y - wrist.y)**2)
@@ -133,18 +133,24 @@ def process_landmark():
             distMiddleToThumb1 = math.sqrt((middle_finger_tip.x-thumb_cmc.x)** 2   + (middle_finger_tip.y - thumb_cmc.y)**2)
             distIndexToThumb1 = math.sqrt((index_finger_tip.x-thumb_cmc.x)** 2   + (index_finger_tip.y - thumb_cmc.y)**2)
 
+            #Active action functions Checker
             SA_active = math.sqrt((middle_finger_tip.x-thumb_tip.x)** 2   + (middle_finger_tip.y - thumb_tip.y)**2)
             LA_active = math.sqrt((index_finger_tip.x-thumb_tip.x)** 2   + (index_finger_tip.y - thumb_tip.y)**2)
+            SU_gesture_active = distPinkyToWrist <= 0.3 and distRingToWrist <= 0.3 and distMiddleToThumb1 <= 0.1 and distIndexToWrist >= 0.4
+            SD_gesture_active = distPinkyToWrist <= 0.4 and distRingToWrist <= 0.4 and distMidToWrist >= 0.4 and distIndexToWrist >= 0.4
 
-            SU_gesture_active = distPinkyToWrist <= 0.3 and distRingToWrist <= 0.3 and distMiddleToThumb1 <= 0.1
-            SD_gesture_active = distPinkyToWrist <= 0.4 and distRingToWrist <= 0.4 and distMidToWrist >= 0.5 and distIndexToWrist >= 0.5
-            frame_count += 1
-            if frame_count % 30 == 0:
-                print("sd_active:", SD_gesture_active, "su_active:", SU_gesture_active)
+            
+            #print("distIndex:", distIndexToWrist, "distMid:", distMidToWrist)
+
+            #Checks if the swipe-down gesture is active and if the action was already completed
             if SD_gesture_active and not swipe_down_complete:
                 swipe_down_action()
+            
+            #Checks if the swipe-up gesture is active and if the action was already completed
             elif SU_gesture_active and not swipe_up_complete:
                 swipe_up_action()
+            
+            #Checks if like-action gesture is active and if the action was alreadu completed
             elif LA_active <= 0.05 and not like_complete:
                 like_action()
             # elif SA_active <= 0.05 and not save_complete:
@@ -162,7 +168,7 @@ def process_landmark():
             for landmark in hand:
                 h, w, c = img.shape
                 cv2.circle(img=img, center=(int(w*landmark.x), int(h*landmark.y)) , radius=1, color=(0,255,0), thickness=3) 
-                print("drawing circle at", int(w*landmark.x), int(h*landmark.y))
+                #print("drawing circle at", int(w*landmark.x), int(h*landmark.y))
                 # print(img is None)
                 
                 # print(landmark.x, landmark.y)

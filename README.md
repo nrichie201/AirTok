@@ -17,8 +17,8 @@ python camera.py
 ```
 
 ## Gestures
-- **Swipe Up**: Pinky, ring, middle fingers close to wrist → next video
-- **Swipe Down**: Pinky, ring, middle close + index to thumb → previous video
+- **Swipe Up**: Pinky, ring, middle finger close to wrist, while index finger is up → next video
+- **Swipe Down**: Pinky and ring close to rist + middle and index are up (extended away from wrist) → previous video
 - **Like**: Thumb and index pinch → like video
 
 ## TODO
