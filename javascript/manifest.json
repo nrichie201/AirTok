@@ -1,0 +1,10 @@
+{
+"manifest_version": 3,
+"name": "AirTok",
+"version": "1.0",
+"permissions": ["camera"],
+"action": { "default_popup": "popup.html"},
+"content_security_policy": {
+  "extension_pages": "script-src 'self' https://cdn.jsdelivr.net; object-src 'self'"
+}
+}

@@ -12,7 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0)       
 img = None
 landmarks_global = []
 
