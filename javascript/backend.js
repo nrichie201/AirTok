@@ -1,40 +1,28 @@
-import cv from '@techstark/opencv-js';
-import { HandLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
+const { HandLandmarker, FilesetResolver } = vision
 
+async function main() {
+    const visionTasks = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+    );
+    const handLandmarker = await HandLandmarker.createFromOptions(visionTasks, {
+        baseOptions: {
+            modelAssetPath: "hand_landmarker.task"
+        },
+        numHands: 2
+    });
 
+    const video = document.getElementById('video')
+    navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+        video.srcObject = stream
+        video.play()
+    })
 
-let video = document.getElementById('videoInput');
-let src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
-let dst = new cv.Mat(video.height, video.width, cv.CV_8UC1);
-let cap = new cv.VideoCapture(video);
-
-const FPS = 30;
-function processVideo() {
-    let begin = Date.now();
-    
-    // Capture frame
-    cap.read(src);
-    
-    // Convert to grayscale
-    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY);
-    
-    // Display
-    cv.imshow('canvasOutput', dst);
-    
-    // Schedule next frame
-    let delay = 1000/FPS - (Date.now() - begin);
-    setTimeout(processVideo, delay);
+    function detectHands() {
+        const results = handLandmarker.detectForVideo(video, Date.now())
+        console.log(results)
+        requestAnimationFrame(detectHands)
+    }
+    detectHands()
 }
 
-// Start camera
-navigator.mediaDevices.getUserMedia({video: true, audio: false})
-    .then(stream => {
-        video.srcObject = stream;
-        video.onloadedmetadata = () => {
-            video.play();
-            processVideo();
-        };
-    })
-    .catch(err => {
-        console.error('Camera error:', err);
-    });
+main()
