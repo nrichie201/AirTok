@@ -13,6 +13,7 @@ async function main() {
     });
 
     const video = document.getElementById('video')
+    video.style.display = 'none'
     navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
         video.srcObject = stream
         video.play()
@@ -20,7 +21,8 @@ async function main() {
     })
 
     function detectHands() {
-    const canvas = document.createElement('canvas');
+
+    const canvas = document.getElementById('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
@@ -29,7 +31,28 @@ async function main() {
     const results = handLandmarker.detectForVideo(canvas, Date.now());
     console.log(results);
     requestAnimationFrame(detectHands);
+    console.log("Drawing landmarks:", results.landmarks.length)
+    for (let hand of results.landmarks) {
+        for (let landmark of hand) {
+            const pixelX = landmark.x * canvas.width
+            const pixelY = landmark.y * canvas.height
+            console.log("canvas size:", canvas.width, canvas.height) 
+            console.log("drawing at:", pixelX, pixelY)
+            ctx.beginPath()
+            ctx.arc(pixelX, pixelY, 5, 0, Math.PI * 2)  // full circle
+            ctx.fillStyle = '#FF0000'  // red
+            console.log("drawing at", pixelX, pixelY)
+            ctx.fill()
+
+            ctx.fillStyle = 'black'
+             
+            ctx.fillRect(pixelX, pixelY, 5, 5)
+        }
     }
+    }
+
+    
+    
 }
 
 main()
