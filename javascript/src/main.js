@@ -28,7 +28,7 @@ function like_action() {
 
 async function main() {
     const visionTasks = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+    "/mediap"
     );
     const handLandmarker = await HandLandmarker.createFromOptions(visionTasks, {
         baseOptions: {
