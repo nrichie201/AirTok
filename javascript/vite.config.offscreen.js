@@ -4,12 +4,13 @@ export default defineConfig({
   build: {
     target: 'chrome110',
     rollupOptions: {
-      input: 'src/main.js',
+      input: 'src/offscreen.js',
       output: {
-        entryFileNames: 'main.js',
-        format: 'iife'  
+        entryFileNames: 'offscreen.js',
+        format: 'iife'
       }
     },
-    outDir: 'dist'
+    outDir: 'dist',
+    emptyOutDir: false
   }
 })
