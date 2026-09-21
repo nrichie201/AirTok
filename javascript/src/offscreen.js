@@ -33,13 +33,17 @@ async function main() {
 
     const video = document.getElementById('video')
     video.style.display = 'none'
-    navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+
+    setTimeout(() => {
+        navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
         video.srcObject = stream
         video.play()
-        setTimeout(() => detectHands(), 1000)
-    })
+        video.requestVideoFrameCallback(detectHands)
+        })
+        }, 2000)
 
     function detectHands() {
+        console.log("video ready state:", video.readyState, "playing:", !video.paused)
         console.log('detectHands running, landmarks:', handLandmarker ? 'ready' : 'not ready');
         const canvas = document.getElementById('canvas');
         canvas.width = video.videoWidth;
@@ -48,9 +52,18 @@ async function main() {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0);
 
-        const results = handLandmarker.detectForVideo(canvas, Date.now());
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        let nonZeroPixels = 0
+        for (let i = 0; i < imageData.data.length; i += 4) {
+            if (imageData.data[i] !== 0 || imageData.data[i+1] !== 0 || imageData.data[i+2] !== 0) {
+                nonZeroPixels++
+            }
+        }
+        console.log('non-zero pixels:', nonZeroPixels, 'out of', imageData.data.length / 4)
+
+        const results = handLandmarker.detectForVideo(video, Date.now());
         console.log('hands detected:', results.landmarks.length);
-        requestAnimationFrame(detectHands);
+        video.requestVideoFrameCallback(detectHands);
 
         for (let hand of results.landmarks) {
             const wrist = hand[0]
